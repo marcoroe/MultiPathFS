@@ -12,7 +12,6 @@ from passthrough import Passthrough
 class dfs(Passthrough):
     def __init__(self, mypaths):
         self.mypaths = mypaths
-        print("Loaded!")
 
     def _full_path(self, partial, lista=False):
         '''
@@ -22,27 +21,31 @@ class dfs(Passthrough):
         in: partial path requested
         out: full os path for operation
         '''
-        print("Call: _full_path Inherited")
+        print("Call: _full_path Inherited with: ", partial)
         if partial.startswith("/"):
             partial = partial[1:]
 
-        # Pick first as write output
-        # Apply filters here if needed
+        # Search if path exist
         valid_path = []
-        print("Primary path: ", valid_path)
+        valid_dirs = []
         for path in self.mypaths:
             full = os.path.join(path, partial)
-            print("Evaluating: " + full)
+            fuld = os.path.dirname(full)
+            # print("Evaluating: " + full)
             if os.path.exists(full):
                 valid_path.append(full)
-                print("Valid!")
-            else:
-                print("Not found!")
+            if os.path.exists(fuld):
+                valid_dirs.append(fuld)
 
-        # If no path has been found, it's a write operation
-        # to the primary dir of the asked path.
+        # If still nothing found default to the first path.
         if len(valid_path) == 0:
-            valid_path.append(os.path.join(self.mypaths[0], partial))
+            if len(valid_dirs) > 0:
+                full = os.path.join(valid_dirs[0], os.path.basename(partial))
+                print("Appending valid folders: ", full)
+                valid_path.append(full)
+            else:
+                print("Appending default path: ", full)
+                valid_path.append(os.path.join(self.mypaths[0], partial))
 
         print("Returning: ", valid_path)
         if lista is True:
@@ -60,11 +63,19 @@ class dfs(Passthrough):
         print("Call: readdir Inherited")
         dirents = ['.', '..']
         # full_paths = self._full_path(path, True)
-        for dir in self._full_path(path, True):
-            if os.path.isdir(dir):
-                dirents.extend(os.listdir(dir))
+        for dirs in self._full_path(path, True):
+            if os.path.isdir(dirs):
+                dirents.extend(os.listdir(dirs))
         for r in list(set(dirents)):
             yield r
+
+    def rename(self, old, new):
+        print("Call: rename")
+        return os.rename(self._full_path(old), self._full_path(new))
+
+    def link(self, target, name):
+        print("Call: link")
+        return os.link(self._full_path(target), self._full_path(name))
 
 
 def main(mountpoint, paths):
