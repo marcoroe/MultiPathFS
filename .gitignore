@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# My test dirs
+dir01/*
+dir02/*
+dir03/*
+mountpoint/*
