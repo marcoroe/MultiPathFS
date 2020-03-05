@@ -10,11 +10,6 @@ from fuse import FUSE, FuseOSError, Operations
 
 
 class Passthrough(Operations):
-    '''
-    This class is a simple copy of the Operations class
-    It has a print method for debug reasons, not usefull
-    for final deployment. Just inherit Operations instead.
-    '''
     def __init__(self, root):
         self.root = root
 
