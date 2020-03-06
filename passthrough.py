@@ -18,13 +18,13 @@ class Passthrough(Operations):
     # =======
 
     def _full_path(self, partial):
-        '''
+        """
         Used by any function to understand where to operate.
         In this case, map partial path to the only root path.
 
         in ex: mydocs/2020/file.doc
         out ex: rootpath/mydocs/2020/file.doc
-        '''
+        """
         if self.verbose:
             print("Call: _full_path")
         if partial.startswith("/"):
@@ -59,15 +59,27 @@ class Passthrough(Operations):
             print("Call: getattr")
         full_path = self._full_path(path)
         st = os.lstat(full_path)
-        return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
-                     'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size', 'st_uid', 'st_blocks'))
+        return dict(
+            (key, getattr(st, key))
+            for key in (
+                "st_atime",
+                "st_ctime",
+                "st_gid",
+                "st_mode",
+                "st_mtime",
+                "st_nlink",
+                "st_size",
+                "st_uid",
+                "st_blocks",
+            )
+        )
 
     def readdir(self, path, fh):
         if self.verbose:
             print("Call: readdir")
         full_path = self._full_path(path)
 
-        dirents = ['.', '..']
+        dirents = [".", ".."]
         if os.path.isdir(full_path):
             dirents.extend(os.listdir(full_path))
         for r in dirents:
@@ -104,9 +116,21 @@ class Passthrough(Operations):
             print("Call: statfs")
         full_path = self._full_path(path)
         stv = os.statvfs(full_path)
-        return dict((key, getattr(stv, key)) for key in ('f_bavail', 'f_bfree',
-            'f_blocks', 'f_bsize', 'f_favail', 'f_ffree', 'f_files', 'f_flag',
-            'f_frsize', 'f_namemax'))
+        return dict(
+            (key, getattr(stv, key))
+            for key in (
+                "f_bavail",
+                "f_bfree",
+                "f_blocks",
+                "f_bsize",
+                "f_favail",
+                "f_ffree",
+                "f_files",
+                "f_flag",
+                "f_frsize",
+                "f_namemax",
+            )
+        )
 
     def unlink(self, path):
         if self.verbose:
@@ -164,7 +188,7 @@ class Passthrough(Operations):
         if self.verbose:
             print("Call: truncate")
         full_path = self._full_path(path)
-        with open(full_path, 'r+') as f:
+        with open(full_path, "r+") as f:
             f.truncate(length)
 
     def flush(self, path, fh):
@@ -187,8 +211,8 @@ def main(mountpoint, root):
     FUSE(Passthrough(root), mountpoint, nothreads=True, foreground=True)
 
 
-if __name__ == '__main__':
-    '''
+if __name__ == "__main__":
+    """
     This file can be run standalone.
-    '''
+    """
     main(sys.argv[2], sys.argv[1])
