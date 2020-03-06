@@ -12,6 +12,7 @@ from fuse import FUSE, FuseOSError, Operations
 class Passthrough(Operations):
     def __init__(self, root):
         self.root = root
+        self.verbose = False
 
     # Helper
     # =======
@@ -24,7 +25,8 @@ class Passthrough(Operations):
         in ex: mydocs/2020/file.doc
         out ex: rootpath/mydocs/2020/file.doc
         '''
-        print("Call: _full_path")
+        if self.verbose:
+            print("Call: _full_path")
         if partial.startswith("/"):
             partial = partial[1:]
         path = os.path.join(self.root, partial)
@@ -34,30 +36,35 @@ class Passthrough(Operations):
     # ==================
 
     def access(self, path, mode):
-        print("Call: access")
+        if self.verbose:
+            print("Call: access")
         full_path = self._full_path(path)
         if not os.access(full_path, mode):
             raise FuseOSError(errno.EACCES)
 
     def chmod(self, path, mode):
-        print("Call: chmod")
+        if self.verbose:
+            print("Call: chmod")
         full_path = self._full_path(path)
         return os.chmod(full_path, mode)
 
     def chown(self, path, uid, gid):
-        print("Call: chown")
+        if self.verbose:
+            print("Call: chown")
         full_path = self._full_path(path)
         return os.chown(full_path, uid, gid)
 
     def getattr(self, path, fh=None):
-        print("Call: getattr")
+        if self.verbose:
+            print("Call: getattr")
         full_path = self._full_path(path)
         st = os.lstat(full_path)
         return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
                      'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size', 'st_uid', 'st_blocks'))
 
     def readdir(self, path, fh):
-        print("Call: readdir")
+        if self.verbose:
+            print("Call: readdir")
         full_path = self._full_path(path)
 
         dirents = ['.', '..']
@@ -67,7 +74,8 @@ class Passthrough(Operations):
             yield r
 
     def readlink(self, path):
-        print("Call: readlink")
+        if self.verbose:
+            print("Call: readlink")
         pathname = os.readlink(self._full_path(path))
         if pathname.startswith("/"):
             # Path name is absolute, sanitize it.
@@ -76,20 +84,24 @@ class Passthrough(Operations):
             return pathname
 
     def mknod(self, path, mode, dev):
-        print("Call: mknod")
+        if self.verbose:
+            print("Call: mknod")
         return os.mknod(self._full_path(path), mode, dev)
 
     def rmdir(self, path):
-        print("Call: rmdir")
+        if self.verbose:
+            print("Call: rmdir")
         full_path = self._full_path(path)
         return os.rmdir(full_path)
 
     def mkdir(self, path, mode):
-        print("Call: mkdir")
+        if self.verbose:
+            print("Call: mkdir")
         return os.mkdir(self._full_path(path), mode)
 
     def statfs(self, path):
-        print("Call: statfs")
+        if self.verbose:
+            print("Call: statfs")
         full_path = self._full_path(path)
         stv = os.statvfs(full_path)
         return dict((key, getattr(stv, key)) for key in ('f_bavail', 'f_bfree',
@@ -97,64 +109,77 @@ class Passthrough(Operations):
             'f_frsize', 'f_namemax'))
 
     def unlink(self, path):
-        print("Call: unlink")
+        if self.verbose:
+            print("Call: unlink")
         return os.unlink(self._full_path(path))
 
     def symlink(self, name, target):
-        print("Call: symlink")
+        if self.verbose:
+            print("Call: symlink")
         return os.symlink(name, self._full_path(target))
 
     def rename(self, old, new):
-        print("Call: rename")
+        if self.verbose:
+            print("Call: rename")
         return os.rename(self._full_path(old), self._full_path(new))
 
     def link(self, target, name):
-        print("Call: link")
+        if self.verbose:
+            print("Call: link")
         return os.link(self._full_path(target), self._full_path(name))
 
     def utimens(self, path, times=None):
-        print("Call: utimens")
+        if self.verbose:
+            print("Call: utimens")
         return os.utime(self._full_path(path), times)
 
     # File methods
     # ============
 
     def open(self, path, flags):
-        print("Call: open")
+        if self.verbose:
+            print("Call: open")
         full_path = self._full_path(path)
         return os.open(full_path, flags)
 
     def create(self, path, mode, fi=None):
-        print("Call: create")
+        if self.verbose:
+            print("Call: create")
         full_path = self._full_path(path)
         return os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
-        print("Call: read")
+        if self.verbose:
+            print("Call: read")
         os.lseek(fh, offset, os.SEEK_SET)
         return os.read(fh, length)
 
     def write(self, path, buf, offset, fh):
-        print("Call: write")
+        if self.verbose:
+            print("Call: write")
         os.lseek(fh, offset, os.SEEK_SET)
         return os.write(fh, buf)
 
     def truncate(self, path, length, fh=None):
-        print("Call: truncate")
+        if self.verbose:
+            print("Call: truncate")
         full_path = self._full_path(path)
         with open(full_path, 'r+') as f:
             f.truncate(length)
 
     def flush(self, path, fh):
-        print("Call: flush")
+        if self.verbose:
+            print("Call: flush")
         return os.fsync(fh)
 
     def release(self, path, fh):
-        print("Call: release")
+        if self.verbose:
+            print("Call: release")
         return os.close(fh)
 
     def fsync(self, path, fdatasync, fh):
-        print("Call: fsync")
+        if self.verbose:
+            print("Call: fsync")
         return self.flush(path, fh)
 
 
