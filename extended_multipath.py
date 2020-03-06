@@ -14,13 +14,13 @@ class dfs(Passthrough):
         self.verbose = False
 
     def _full_path(self, partial, lista=False):
-        '''
+        """
         Helper function that decide the path to use
         for the requested operation from FUSE
 
         in: partial path requested
         out: full os path for operation
-        '''
+        """
         if self.verbose:
             print("Call: _full_path Inherited with: ", partial)
         if partial.startswith("/"):
@@ -54,15 +54,15 @@ class dfs(Passthrough):
             return valid_path[0]
 
     def readdir(self, path, fh):
-        '''
+        """
         Modified read directory to handle multi path search
 
         in: requested path
         out: ALL dir paths in requested path
-        '''
+        """
         if self.verbose:
             print("Call: readdir Inherited")
-        dirents = ['.', '..']
+        dirents = [".", ".."]
         # full_paths = self._full_path(path, True)
         for dirs in self._full_path(path, True):
             if os.path.isdir(dirs):
@@ -71,13 +71,13 @@ class dfs(Passthrough):
             yield r
 
     def rename(self, old, new):
-        '''
+        """
         Modified rename function to allow renaming without
         moving content between paths.
 
         in: requested name change tuple
         out: os mv operation
-        '''
+        """
         if self.verbose:
             print("Call: rename Inherited")
         if os.path.dirname(old) != os.path.dirname(new):
@@ -95,12 +95,17 @@ class dfs(Passthrough):
 
 def main(mountpoint, paths):
     print(paths)
-    FUSE(dfs(paths), mountpoint, nothreads=True,
-         foreground=True, **{'allow_other': False})
+    FUSE(
+        dfs(paths),
+        mountpoint,
+        nothreads=True,
+        foreground=True,
+        **{"allow_other": False}
+    )
 
 
 # Read config files and start daemon
-if __name__ == '__main__':
+if __name__ == "__main__":
     with open("config", "r") as f:
         data = f.readlines()
 
