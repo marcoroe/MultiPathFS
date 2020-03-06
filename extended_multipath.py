@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 
 import os
-import sys
-import errno
+import logging
 
 # Requires: pip fusepy >= 3.0.0
-from fuse import FUSE, FuseOSError, Operations
+from fuse import FUSE
 from passthrough import Passthrough
 
 
 class dfs(Passthrough):
     def __init__(self, mypaths):
         self.mypaths = mypaths
+        self.verbose = False
 
     def _full_path(self, partial, lista=False):
         '''
@@ -21,7 +21,8 @@ class dfs(Passthrough):
         in: partial path requested
         out: full os path for operation
         '''
-        print("Call: _full_path Inherited with: ", partial)
+        if self.verbose:
+            print("Call: _full_path Inherited with: ", partial)
         if partial.startswith("/"):
             partial = partial[1:]
 
@@ -37,17 +38,16 @@ class dfs(Passthrough):
             if os.path.exists(fuld):
                 valid_dirs.append(fuld)
 
-        # If still nothing found default to the first path.
+        # File or Dir or Empty list
         if len(valid_path) == 0:
             if len(valid_dirs) > 0:
                 full = os.path.join(valid_dirs[0], os.path.basename(partial))
-                print("Appending valid folders: ", full)
+                if self.verbose:
+                    print("Appending valid folders: ", full)
                 valid_path.append(full)
-            else:
-                print("Appending default path: ", full)
-                valid_path.append(os.path.join(self.mypaths[0], partial))
 
-        print("Returning: ", valid_path)
+        if self.verbose:
+            print("Returning: ", valid_path)
         if lista is True:
             return valid_path
         else:
@@ -60,7 +60,8 @@ class dfs(Passthrough):
         in: requested path
         out: ALL dir paths in requested path
         '''
-        print("Call: readdir Inherited")
+        if self.verbose:
+            print("Call: readdir Inherited")
         dirents = ['.', '..']
         # full_paths = self._full_path(path, True)
         for dirs in self._full_path(path, True):
@@ -70,16 +71,29 @@ class dfs(Passthrough):
             yield r
 
     def rename(self, old, new):
-        print("Call: rename")
-        return os.rename(self._full_path(old), self._full_path(new))
+        '''
+        Modified rename function to allow renaming without
+        moving content between paths.
 
-    def link(self, target, name):
-        print("Call: link")
-        return os.link(self._full_path(target), self._full_path(name))
+        in: requested name change tuple
+        out: os mv operation
+        '''
+        if self.verbose:
+            print("Call: rename Inherited")
+        if os.path.dirname(old) != os.path.dirname(new):
+            if self.verbose:
+                print("Renaming:", old, " in ", new)
+            Passthrough.rename(self, old, new)
+        else:
+            old_path = self._full_path(old)
+            old_dir = os.path.dirname(old_path)
+            new_path = old_dir + new
+            if self.verbose:
+                print("Renaming:", old_path, " in ", new_path)
+            return os.rename(old_path, new_path)
 
 
 def main(mountpoint, paths):
-    print("Loading FUSE package...")
     print(paths)
     FUSE(dfs(paths), mountpoint, nothreads=True,
          foreground=True, **{'allow_other': False})
@@ -95,7 +109,10 @@ if __name__ == '__main__':
         # Strip special chars from config file
         path_list.append(line.rstrip())
 
-    print("Operating with: " + str(path_list))
+    print("MultiPathFS: Operating with: " + str(path_list))
+
+    # Enable logging if needed
+    logging.basicConfig(level=logging.WARN)
 
 # Call for main(mountpoint, paths)
 main(path_list[0], path_list[1:])
